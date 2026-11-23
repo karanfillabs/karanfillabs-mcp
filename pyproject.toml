@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "karanfillabs-mcp"
+version = "0.1.0"
+description = "Official MCP Server for Karanfil Labs Visual DNA API — Identify movies and TV episodes from video frames or English scene descriptions."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "Karanfil Labs", email = "info@karanfillabs.com" }
+]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "karanfillabs",
+    "movie-recognition",
+    "video-search",
+    "clip",
+    "anti-piracy",
+    "visual-search"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "mcp>=1.2.0",
+    "httpx>=0.27.0",
+]
+
+[project.urls]
+Homepage = "https://karanfillabs.com"
+Documentation = "https://api.karanfillabs.com/docs"
+Repository = "https://github.com/karanfillabs/karanfillabs-mcp"
+
+[project.scripts]
+karanfillabs-mcp = "karanfillabs_mcp:main"
+
+[tool.setuptools]
+py-modules = ["karanfillabs_mcp"]
