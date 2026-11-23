@@ -1,5 +1,5 @@
 # Karanfil Labs — Visual DNA MCP Server
-
+[![Karanfil Labs Visual DNA MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/karanfillabs/karanfillabs-mcp/badges/card.svg)](https://glama.ai/mcp/servers/karanfillabs/karanfillabs-mcp)
 ![Karanfil Labs Visual DNA API](https://raw.githubusercontent.com/karanfillabs/visual-dna-quickstart/main/karanfillabs_cover.jpg)
 
 Official **Model Context Protocol (MCP)** server for the **[Karanfil Labs Visual DNA API](https://karanfillabs.com)** — enabling **Claude Desktop**, **Cursor**, **Windsurf**, and any MCP-compatible AI agent to identify movies & TV episodes from video frames or search across **88M+ 768-d visual fingerprints** using plain-language prompts.
