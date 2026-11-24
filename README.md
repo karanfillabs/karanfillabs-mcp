@@ -1,4 +1,5 @@
 # Karanfil Labs — Visual DNA MCP Server
+[![karanfillabs/karanfillabs-mcp MCP server](https://glama.ai/mcp/servers/karanfillabs/karanfillabs-mcp/badges/score.svg)](https://glama.ai/mcp/servers/karanfillabs/karanfillabs-mcp)
 [![Karanfil Labs Visual DNA MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/karanfillabs/karanfillabs-mcp/badges/card.svg)](https://glama.ai/mcp/servers/karanfillabs/karanfillabs-mcp)
 ![Karanfil Labs Visual DNA API](https://raw.githubusercontent.com/karanfillabs/visual-dna-quickstart/main/karanfillabs_cover.jpg)
 
