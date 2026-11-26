@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "karanfillabs-mcp"
-version = "0.1.1"
-description = "Official MCP Server for Karanfil Labs Visual DNA API — Identify movies and TV episodes from video frames or English scene descriptions."
+version = "0.2.0"
+description = "Official MCP Server for Karanfil Labs Visual, Cinematography & 24-Language Dialogue DNA API — Frame ID, B2B color palettes & shot scales, and 24-lang quote timestamps."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"

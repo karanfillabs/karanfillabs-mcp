@@ -140,15 +140,172 @@ def search_scenes_by_text(
     return _format_matches(resp.json(), is_text_search=True)
 
 
+import json as _json
+import re as _re
+from typing import Optional as _Optional
+
+_HEX_RE = _re.compile(r"^#?[0-9A-Fa-f]{6}$")
+
+
+@mcp.tool()
+def search_cinematography_palette(
+    target_hex: _Optional[str] = None,
+    color_tolerance: float = 22.0,
+    lighting_style: _Optional[str] = None,
+    shot_scale: _Optional[str] = None,
+    color_harmony: _Optional[str] = None,
+    min_symmetry: _Optional[float] = None,
+    min_aspect_ratio: _Optional[float] = None,
+    max_aspect_ratio: _Optional[float] = None,
+    media_type: _Optional[str] = None,
+    tmdb_id: _Optional[int] = None,
+    top_k: int = 8,
+) -> str:
+    """Search B2B cinema & TV reference scenes by HEX color palette, lighting mood, harmony, camera shot scale, symmetry, and aspect ratio.
+
+    Args:
+        target_hex: Optional 6-digit HEX color (#RRGGBB, e.g. '#6EB4E1'). Matched perceptually across all 5 scene swatches.
+        color_tolerance: Perceptual color distance tolerance from 2.0 to 50.0 (default 22.0).
+        lighting_style: Optional lighting mood: 'low_key', 'high_key', 'chiaroscuro', 'silhouette', 'balanced'.
+        shot_scale: Optional framing scale: 'extreme_close_up', 'close_up', 'medium_shot', 'wide_shot'.
+        color_harmony: Optional harmony: 'teal_orange', 'cyberpunk_neon', 'warm_vintage', 'cool_noir', 'monochrome', 'natural_balanced'.
+        min_symmetry: Optional minimum left-right symmetry score (0.0 to 1.0).
+        min_aspect_ratio: Optional minimum active aspect ratio (e.g. 2.30).
+        max_aspect_ratio: Optional maximum active aspect ratio.
+        media_type: Optional filter: 'movie' or 'tv'.
+        tmdb_id: Optional TMDB ID to inspect scenes inside one specific title.
+        top_k: Maximum reference scenes to return (1 to 50, default 8).
+    """
+    api_key = _get_api_key()
+    payload: dict = {
+        "top_k": max(1, min(50, int(top_k))),
+        "color_tolerance": max(2.0, min(50.0, float(color_tolerance))),
+    }
+    if target_hex:
+        hx = target_hex.strip()
+        if not _HEX_RE.match(hx):
+            return "Error: target_hex must be a 6-character HEX color like '#6EB4E1'."
+        payload["target_hex"] = hx if hx.startswith("#") else f"#{hx}"
+    if lighting_style:
+        payload["lighting_style"] = lighting_style.strip().lower()
+    if shot_scale:
+        payload["shot_scale"] = shot_scale.strip().lower()
+    if color_harmony:
+        payload["color_harmony"] = color_harmony.strip().lower()
+    if min_symmetry is not None:
+        payload["min_symmetry"] = max(0.0, min(1.0, float(min_symmetry)))
+    if min_aspect_ratio is not None:
+        payload["min_aspect_ratio"] = float(min_aspect_ratio)
+    if max_aspect_ratio is not None:
+        payload["max_aspect_ratio"] = float(max_aspect_ratio)
+    if media_type:
+        payload["media_type"] = media_type.strip().lower()
+    if tmdb_id is not None:
+        payload["tmdb_id"] = int(tmdb_id)
+
+    with httpx.Client(timeout=30.0) as client:
+        resp = client.post(
+            f"{API_BASE}/v1/cinematography/search",
+            headers={"X-API-Key": api_key, "Content-Type": "application/json"},
+            json=payload,
+        )
+    if resp.status_code != 200:
+        return f"API Error ({resp.status_code}): {resp.text}"
+
+    data = resp.json()
+    matches = data.get("matches") or []
+    q = data.get("quota") or {}
+    hdr = f"Cinematography Latency: {data.get('latency_ms')} ms | Plan: {q.get('plan')} | Remaining Quota: {q.get('remaining_quota')}"
+    if not matches:
+        return f"{hdr}\nNo scenes matched these filters. Try increasing color_tolerance or removing a filter."
+
+    lines = [hdr, ""]
+    for idx, m in enumerate(matches, start=1):
+        yr = f" ({m['year']})" if m.get("year") else ""
+        ep = f" • {m['episode']}" if m.get("episode") else ""
+        tmdb = f" | TMDB #{m['tmdb_id']}" if m.get("tmdb_id") else ""
+        dist = f" | Dist: {m['color_distance']}" if "color_distance" in m else ""
+        sw = ", ".join(f"{s.get('hex')} ({float(s.get('ratio') or 0)*100:.0f}%)" for s in (m.get("palette") or []))
+        lines.append(f"{idx}. {m.get('title')}{yr} [{m.get('media_type', 'movie')}{ep}] @ {m.get('timecode')} ({m.get('frame_sec')}s){tmdb}{dist}")
+        lines.append(f"   Palette: {sw}")
+        lines.append(f"   Light={m.get('lighting_style')} | Scale={m.get('shot_scale')} | Harmony={m.get('color_harmony')} | Aspect={m.get('aspect_ratio')}:1 | Sym={m.get('symmetry_score')}")
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def search_dialogue_timestamp(
+    query: str,
+    lang: _Optional[str] = None,
+    media_type: _Optional[str] = None,
+    tmdb_id: _Optional[int] = None,
+    top_k: int = 5,
+    min_score: float = 0.72,
+) -> str:
+    """Find the exact movie/series episode and HH:MM:SS scene timestamp from a remembered quote or dialogue topic across 24 languages.
+
+    Args:
+        query: Remembered quote or conversational topic in Turkish, English, or any of 24 languages (do NOT enter a movie title).
+        lang: Optional ISO-639-1 subtitle language filter (e.g. 'tr', 'en', 'fr', 'ja'). Leave None for automatic 24-language search.
+        media_type: Optional filter: 'movie' or 'tv'.
+        tmdb_id: Optional TMDB ID to search inside one specific title.
+        top_k: Number of matches to return (1 to 20, default 5).
+        min_score: Minimum semantic similarity score (0.50 to 0.99, default 0.72).
+    """
+    api_key = _get_api_key()
+    clean_q = query.strip()
+    if len(clean_q) < 2:
+        return "Error: Dialogue query must be at least 2 characters."
+
+    payload: dict = {
+        "query": clean_q,
+        "top_k": max(1, min(20, int(top_k))),
+        "min_score": max(0.50, min(0.99, float(min_score))),
+    }
+    if lang:
+        payload["lang"] = lang.strip().lower()[:3]
+    if media_type:
+        payload["media_type"] = media_type.strip().lower()
+    if tmdb_id is not None:
+        payload["tmdb_id"] = int(tmdb_id)
+
+    with httpx.Client(timeout=30.0) as client:
+        resp = client.post(
+            f"{API_BASE}/v1/dialogue/search",
+            headers={"X-API-Key": api_key, "Content-Type": "application/json"},
+            json=payload,
+        )
+    if resp.status_code != 200:
+        return f"API Error ({resp.status_code}): {resp.text}"
+
+    data = resp.json()
+    matches = data.get("matches") or []
+    q = data.get("quota") or {}
+    hdr = f"Dialogue DNA Latency: {data.get('latency_ms')} ms | Plan: {q.get('plan')} | Remaining Quota: {q.get('remaining_quota')}"
+    if not matches:
+        return f"{hdr}\nNo dialogue match above threshold (archive harvesting continues 24/7)."
+
+    lines = [hdr, ""]
+    for idx, m in enumerate(matches, start=1):
+        yr = f" ({m['year']})" if m.get("year") else ""
+        ep = f" • {m['episode']}" if m.get("episode") else ""
+        tmdb = f" | TMDB #{m['tmdb_id']}" if m.get("tmdb_id") else ""
+        mlang = str(m.get("matched_lang") or "auto").upper()
+        conf = float(m.get("confidence") or 0.0) * 100.0
+        lines.append(f"{idx}. {m.get('title')}{yr} [{m.get('media_type', 'movie')}{ep}] @ {m.get('timecode')} ({m.get('start_sec')}s-{m.get('end_sec')}s) — {conf:.1f}% | Lang: {mlang}{tmdb}")
+    return "\n".join(lines)
+
+
 @mcp.tool()
 def check_visual_dna_status() -> str:
-    """Check Karanfil Labs Visual DNA API server health and live indexed 768-d frame vector count (no API key required)."""
+    """Check Karanfil Labs API health plus live Visual DNA, Cinematography Color DNA, and 24-Language Dialogue DNA statistics (no API key required)."""
+    out = {}
     with httpx.Client(timeout=15.0) as client:
-        resp = client.get(f"{API_BASE}/health")
-    if resp.status_code != 200:
-        return f"Health check returned HTTP {resp.status_code}: {resp.text}"
-    return resp.text
-
+        rh = client.get(f"{API_BASE}/health")
+        out["visual_dna_health"] = rh.json() if rh.status_code == 200 else f"HTTP {rh.status_code}"
+        rb = client.get(f"{API_BASE}/v1/cinematography/stats")
+        if rb.status_code == 200:
+            out["cinematography_and_dialogue_stats"] = rb.json()
+    return _json.dumps(out, indent=2, ensure_ascii=False)
 
 def main() -> None:
     mcp.run()

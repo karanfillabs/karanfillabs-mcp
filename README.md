@@ -15,6 +15,8 @@ Official **Model Context Protocol (MCP)** server for the **[Karanfil Labs Visual
 1. **`identify_scene_from_image`** — Identify the movie or TV episode (`SxxExx`), release year, `tmdb_id`, and similarity confidence from any local screenshot file path (`PNG`, `JPG`, `WEBP`) or direct image URL (`POST /v1/identify`). Works even on cropped or subtitled frames.
 2. **`search_scenes_by_text`** — Semantic text-to-scene discovery across millions of cinema and TV frames using natural English descriptions like *"rainy neon street car chase"* (`POST /v1/search`).
 3. **`check_visual_dna_status`** — Keyless health check returning live server status and real-time indexed 768-d vector count (`GET /health`).
+4. **`search_cinematography_palette`** *(NEW in v0.2.0)* — Search B2B reference shots by HEX paint color (`#6EB4E1`), `lighting_style` (`low_key`, `chiaroscuro`, `high_key`), `shot_scale` (`close_up`, `wide_shot`), `color_harmony`, and `min_symmetry` (`POST /v1/cinematography/search`).
+5. **`search_dialogue_timestamp`** *(NEW in v0.2.0)* — Find exact movie/series and `HH:MM:SS` scene timestamp from a remembered quote across **24 languages** (`POST /v1/dialogue/search`).
 
 ### Privacy & Catalog Note
 * **Volatile RAM Processing:** Submitted image frames are converted into 768-d mathematical vectors strictly in volatile server RAM and discarded immediately — zero full images or copyrighted videos are hosted or written to disk.
@@ -35,7 +37,7 @@ Requires [`uv`](https://docs.astral.sh/uv/) (`pip install uv` or `brew install u
       "command": "uvx",
       "args": [
         "--from",
-        "git+[https://github.com/karanfillabs/karanfillabs-mcp](https://github.com/karanfillabs/karanfillabs-mcp)",
+        "git+https://github.com/karanfillabs/karanfillabs-mcp",
         "karanfillabs-mcp"
       ],
       "env": {
@@ -76,6 +78,8 @@ Requires [`uv`](https://docs.astral.sh/uv/) (`pip install uv` or `brew install u
 1. **`identify_scene_from_image`** — Bilgisayarınızdaki bir ekran görüntüsü yolundan (`PNG`, `JPG`, `WEBP`) veya doğrudan görsel bağlantısından hangi film/dizi bölümü (`SxxExx`) olduğunu, yılını, `tmdb_id` bilgisini ve güven skorunu döndürür (`POST /v1/identify`).
 2. **`search_scenes_by_text`** — Doğal dil sahne tarifleriyle milyonlarca sinema/dizi karesi içinde anlamsal sahne araması yapar (`POST /v1/search`). Türkçe yazsanız bile yapay zeka asistanınız tarifi otomatik İngilizceye çevirerek sorgular.
 3. **`check_visual_dna_status`** — Anahtar gerektirmeden sunucu sağlık durumunu ve o an aktif olan canlı vektör sayısını döndürür (`GET /health`).
+4. **`search_cinematography_palette`** *(YENİ — v0.2.0)* — Boya rengi (`#6EB4E1`), ışık havası (`low_key`, `high_key`), çekim ölçeği (`close_up`, `wide_shot`) ve renk uyumuna göre film sahnelerini, dakikalarını ve 5'li renk şeritlerini bulur (`POST /v1/cinematography/search`).
+5. **`search_dialogue_timestamp`** *(YENİ — v0.2.0)* — Hatırlanan replik veya sahne konuşmasından **24 dilde** filmin adını ve tam `SS:DD:SN` sahne dakikasını bulur (`POST /v1/dialogue/search`).
 
 ### Gizlilik ve Katalog Notu
 * **Anlık RAM İşleme (KVKK / GDPR Uyumlu):** Gönderilen kareler yalnızca geçici sunucu belleğinde (RAM) 768 boyutlu vektöre çevrilip salisesinde silinir; diske ham görsel yazılmaz ve telifli video barındırılmaz.
